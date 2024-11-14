@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_render.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -20,11 +21,13 @@ bool initialize_window(void) {
         return false;
     }
 
+    // Retrieve current display resolution and set the window dimensions
     SDL_DisplayMode displayMode;
     SDL_GetCurrentDisplayMode(0, &displayMode);
     window_width = displayMode.w;
     window_height = displayMode.h;
 
+    // Create an SDL window in fullscreen mode
     window = SDL_CreateWindow(
         NULL,
         SDL_WINDOWPOS_CENTERED,
@@ -38,6 +41,7 @@ bool initialize_window(void) {
         return false;
     }
 
+    // Create an SDL renderer
     renderer = SDL_CreateRenderer(window, -1, 0);
     if (!renderer) {
         fprintf(stderr, "Error creating SDL renderer.\n");
@@ -49,8 +53,14 @@ bool initialize_window(void) {
 }
 
 void setup(void) {
+    // Allocate memory for the color buffer, which holds pixel data for the screen
     color_buffer = (uint32_t *) malloc(sizeof(uint32_t) * window_width * window_height);
+    if (!color_buffer) {
+        fprintf(stderr, "Error allocating memory for color buffer.\n");
+        is_running = false;
+    }
 
+    // Create an SDL texture to display the color buffer
     color_buffer_texture = SDL_CreateTexture(
         renderer,
         SDL_PIXELFORMAT_ARGB8888,
@@ -79,6 +89,7 @@ void update(void) {
     // TODO
 }
 
+// Copy the color buffer to the texture and render it
 void render_color_buffer(void) {
     SDL_UpdateTexture(
         color_buffer_texture,
@@ -109,6 +120,7 @@ void draw_rect(int x, int y, int width, int height, uint32_t color) {
     }
 }
 
+// Clear the color buffer with a specific color
 void clear_color_buffer(uint32_t color) {
     for (int y = 0; y < window_height; y++) {
         for (int x = 0; x < window_width; x++) {
@@ -132,6 +144,7 @@ void render(void) {
 
 void destroy_window(void) {
     free(color_buffer);
+    SDL_DestroyTexture(color_buffer_texture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
