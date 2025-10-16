@@ -7,6 +7,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(SDL3 CONFIG REQUIRED)
 include_directories(${SDL3_INCLUDE_DIRS})
+include_directories(${CMAKE_SOURCE_DIR}/include)
 
 file(GLOB SRC_FILES "src/*.c")
 
