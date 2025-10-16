@@ -1,4 +1,5 @@
 #include <display.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 SDL_Window *window = NULL;
@@ -47,6 +48,14 @@ bool initialize_window(void)
   SDL_ShowWindow(window);
 
   return true;
+}
+
+void draw_pixel(int x, int y, uint32_t color)
+{
+  if (x < window_width && y < window_height)
+  {
+    color_buffer[(window_width * y) + x] = color;
+  }
 }
 
 void draw_grid(void)
