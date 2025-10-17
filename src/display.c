@@ -1,5 +1,6 @@
 #include <display.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 SDL_Window *window = NULL;
@@ -18,13 +19,30 @@ bool initialize_window(void)
   }
 
   // query screen resolution
-  const SDL_DisplayMode *display_mode = SDL_GetCurrentDisplayMode(1);
-  if (!display_mode)
+  int num_displays = 0;
+  SDL_DisplayID *displays = SDL_GetDisplays(&num_displays);
+  if (num_displays <= 0 || !displays)
   {
-    fprintf(stderr, "Error: SDL_GetCurrentDisplayMode(): %s\n", SDL_GetError());
+    fprintf(stderr, "Error: No displays found: %s\n", SDL_GetError());
+    window_width = 800;  // fallback resolution
+    window_height = 600;
   }
-  window_width = display_mode->w;
-  window_height = display_mode->h;
+  else
+  {
+    const SDL_DisplayMode *display_mode = SDL_GetCurrentDisplayMode(displays[0]);
+    if (!display_mode)
+    {
+      fprintf(stderr, "Error: SDL_GetCurrentDisplayMode(): %s\n", SDL_GetError());
+      window_width = 800;  // fallback resolution
+      window_height = 600;
+    }
+    else
+    {
+      window_width = display_mode->w;
+      window_height = display_mode->h;
+    }
+    SDL_free(displays);
+  }
 
   // create SDL window
   window = SDL_CreateWindow(NULL, window_width, window_height, SDL_WINDOW_BORDERLESS);

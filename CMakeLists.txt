@@ -12,4 +12,4 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 file(GLOB SRC_FILES "src/*.c")
 
 add_executable(${PROJECT_NAME} ${SRC_FILES})
-target_link_libraries(${PROJECT_NAME} ${SDL3_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${SDL3_LIBRARIES} m)
