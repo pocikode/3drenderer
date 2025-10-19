@@ -1,4 +1,5 @@
 #include <display.h>
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,7 +25,7 @@ bool initialize_window(void)
   if (num_displays <= 0 || !displays)
   {
     fprintf(stderr, "Error: No displays found: %s\n", SDL_GetError());
-    window_width = 800;  // fallback resolution
+    window_width = 800; // fallback resolution
     window_height = 600;
   }
   else
@@ -33,7 +34,7 @@ bool initialize_window(void)
     if (!display_mode)
     {
       fprintf(stderr, "Error: SDL_GetCurrentDisplayMode(): %s\n", SDL_GetError());
-      window_width = 800;  // fallback resolution
+      window_width = 800; // fallback resolution
       window_height = 600;
     }
     else
@@ -74,6 +75,33 @@ void draw_pixel(int x, int y, uint32_t color)
   {
     color_buffer[(window_width * y) + x] = color;
   }
+}
+
+void draw_line(int x0, int y0, int x1, int y1, uint32_t color)
+{
+  int dx = x1 - x0;
+  int dy = y1 - y0;
+
+  int steps = abs(dx) > abs(dy) ? abs(dx) : abs(dy);
+
+  float inc_x = dx / (float)steps;
+  float inc_y = dy / (float)steps;
+
+  float x = x0;
+  float y = y0;
+  for (int i = 0; i <= steps; i++)
+  {
+    draw_pixel(round(x), round(y), color);
+    x += inc_x;
+    y += inc_y;
+  }
+}
+
+void draw_triangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color)
+{
+  draw_line(x0, y0, x1, y1, color);
+  draw_line(x1, y1, x2, y2, color);
+  draw_line(x2, y2, x0, y0, color);
 }
 
 void draw_grid(void)
