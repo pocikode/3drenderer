@@ -2,12 +2,14 @@
 #include "display.h"
 #include "mesh.h"
 #include "triangle.h"
+#include "vector.h"
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 triangle_t *triangles_to_render = NULL;
 
-vec3_t camera_position = {0, 0, -5};
+vec3_t camera_position = {0, 0, 0};
 
 float fov_factor = 640;
 
@@ -25,7 +27,7 @@ void setup(void)
     window_width,
     window_height);
 
-  load_obj_file_data("../assets/f22.obj");
+  load_obj_file_data("../assets/cube.obj");
 }
 
 void process_input(void)
@@ -81,8 +83,8 @@ void update(void)
     face_vertices[1] = mesh.vertices[mesh_face.b - 1];
     face_vertices[2] = mesh.vertices[mesh_face.c - 1];
 
-    triangle_t projected_triangle;
-
+    // perform transformations
+    vec3_t transformed_vertices[3];
     for (int j = 0; j < 3; j++)
     {
       vec3_t transformed_vertex = face_vertices[j];
@@ -91,9 +93,32 @@ void update(void)
       transformed_vertex = vec3_rotate_y(transformed_vertex, mesh.rotation.y);
       transformed_vertex = vec3_rotate_z(transformed_vertex, mesh.rotation.z);
 
-      transformed_vertex.z -= camera_position.z;
+      transformed_vertex.z += 5;
 
-      vec2_t projected_point = project(transformed_vertex);
+      transformed_vertices[j] = transformed_vertex;
+    }
+
+    // perform backface culling
+    vec3_t vector_a = transformed_vertices[0];
+    vec3_t vector_b = transformed_vertices[1];
+    vec3_t vector_c = transformed_vertices[2];
+    vec3_t vector_ab = vec3_sub(vector_b, vector_a);
+    vec3_t vector_ac = vec3_sub(vector_c, vector_a);
+    vec3_t vector_normal = vec3_cross(vector_ab, vector_ac);
+
+    // Camera ray should point from camera to the vertex
+    vec3_t camera_ray = vec3_sub(camera_position, vector_a);
+    float dot_normal_camera = vec3_dot(vector_normal, camera_ray);
+    if (dot_normal_camera < 0)
+    {
+      continue;
+    }
+
+    // perform projection
+    triangle_t projected_triangle;
+    for (int j = 0; j < 3; j++)
+    {
+      vec2_t projected_point = project(transformed_vertices[j]);
       projected_point.x += (int)(window_width / 2);
       projected_point.y += (int)(window_height / 2);
       projected_triangle.points[j] = projected_point;
@@ -115,8 +140,8 @@ void render(void)
   clear_color_buffer(0xFF000000);
   draw_grid();
 
-  int num_faces = array_length(mesh.faces);
-  for (int i = 0; i < num_faces; i++)
+  int num_triangles = array_length(triangles_to_render);
+  for (int i = 0; i < num_triangles; i++)
   {
     triangle_t triangle = triangles_to_render[i];
     draw_triangle(
