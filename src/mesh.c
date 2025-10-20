@@ -1,7 +1,9 @@
 #include "mesh.h"
 #include "array.h"
 #include "triangle.h"
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 mesh_t mesh = {
   .vertices = NULL,
@@ -54,4 +56,47 @@ void load_cube_mesh_data(void)
     face_t cube_face = cube_faces[i];
     array_push(mesh.faces, cube_face);
   }
+}
+
+void load_obj_file_data(char *filename)
+{
+  FILE *fp = fopen(filename, "r");
+  if (fp == NULL)
+  {
+    perror("Error opening obj file");
+    return;
+  }
+
+  char buff[512];
+  while (fgets(buff, 512, fp))
+  {
+    // vertex information
+    if (buff[0] == 'v' && buff[1] == ' ')
+    {
+      vec3_t vertex;
+      sscanf(buff, "v %f %f %f", &vertex.x, &vertex.y, &vertex.z);
+      array_push(mesh.vertices, vertex);
+      continue;
+    }
+
+    // face information
+    if (buff[0] == 'f' && buff[1] == ' ')
+    {
+      int vertex_indices[3];
+      int texture_indices[3];
+      int normal_indices[3];
+      sscanf(
+        buff,
+        "f %d/%d/%d %d/%d/%d %d/%d/%d",
+        &vertex_indices[0], &texture_indices[0], &normal_indices[0],
+        &vertex_indices[1], &texture_indices[1], &normal_indices[1],
+        &vertex_indices[2], &texture_indices[2], &normal_indices[2]);
+
+      face_t face = {vertex_indices[0], vertex_indices[1], vertex_indices[2]};
+      array_push(mesh.faces, face);
+      continue;
+    }
+  }
+
+  fclose(fp);
 }

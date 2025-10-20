@@ -25,7 +25,7 @@ void setup(void)
     window_width,
     window_height);
 
-  load_cube_mesh_data();
+  load_obj_file_data("../assets/f22.obj");
 }
 
 void process_input(void)
@@ -115,7 +115,8 @@ void render(void)
   clear_color_buffer(0xFF000000);
   draw_grid();
 
-  for (int i = 0; i < N_CUBE_FACES; i++)
+  int num_faces = array_length(mesh.faces);
+  for (int i = 0; i < num_faces; i++)
   {
     triangle_t triangle = triangles_to_render[i];
     draw_triangle(
@@ -125,7 +126,7 @@ void render(void)
       triangle.points[1].y,
       triangle.points[2].x,
       triangle.points[2].y,
-      0xFFFFFF00);
+      0xFF00FF00);
   }
 
   array_free(triangles_to_render);
