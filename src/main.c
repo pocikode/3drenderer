@@ -104,9 +104,13 @@ void update(void)
     vec3_t vector_c = transformed_vertices[2];
     vec3_t vector_ab = vec3_sub(vector_b, vector_a);
     vec3_t vector_ac = vec3_sub(vector_c, vector_a);
-    vec3_t vector_normal = vec3_cross(vector_ab, vector_ac);
+    vec3_normalize(&vector_ab);
+    vec3_normalize(&vector_ac);
 
-    // Camera ray should point from camera to the vertex
+    // get the face normal
+    vec3_t vector_normal = vec3_cross(vector_ab, vector_ac);
+    vec3_normalize(&vector_normal);
+
     vec3_t camera_ray = vec3_sub(camera_position, vector_a);
     float dot_normal_camera = vec3_dot(vector_normal, camera_ray);
     if (dot_normal_camera < 0)
