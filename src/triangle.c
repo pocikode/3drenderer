@@ -1,6 +1,8 @@
 #include "triangle.h"
+#include "array.h"
 #include "display.h"
 #include <stdint.h>
+#include <stdio.h>
 
 void int_swap(int *a, int *b)
 {
@@ -80,5 +82,22 @@ void draw_filled_triangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32
 
     fill_flat_bottom_triangle(x0, y0, x1, y1, Mx, My, color);
     fill_flat_top_triangle(x1, y1, Mx, My, x2, y2, color);
+  }
+}
+
+void sort_triangles(triangle_t *triangles)
+{
+  int num_triangles = array_length(triangles);
+  for (int i = 0; i < num_triangles; i++)
+  {
+    for (int j = num_triangles; j > i; j--)
+    {
+      if (triangles[i].avg_depth < triangles[j].avg_depth)
+      {
+        triangle_t tmp = triangles[i];
+        triangles[i] = triangles[j];
+        triangles[j] = tmp;
+      }
+    }
   }
 }
