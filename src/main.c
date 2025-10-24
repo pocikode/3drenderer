@@ -1,5 +1,6 @@
 #include "array.h"
 #include "display.h"
+#include "light.h"
 #include "matrix.h"
 #include "mesh.h"
 #include "triangle.h"
@@ -38,46 +39,47 @@ void setup(void)
   float zfar = 100.0;
   proj_matrix = mat4_make_perspective(fov, aspect_ratio, znear, zfar);
 
-  load_cube_mesh_data();
-  // load_obj_file_data("../assets/cube.obj");
+  // load_cube_mesh_data();
+  load_obj_file_data("../assets/f22.obj");
 }
 
 void process_input(void)
 {
   SDL_Event event;
-  SDL_PollEvent(&event);
-
-  switch (event.type)
+  while (SDL_PollEvent(&event))
   {
-  case SDL_EVENT_QUIT:
-    is_running = false;
-    break;
-  case SDL_EVENT_KEY_DOWN:
-    switch (event.key.key)
+    switch (event.type)
     {
-    case SDLK_ESCAPE:
+    case SDL_EVENT_QUIT:
       is_running = false;
       break;
-    case SDLK_C:
-      cull_method = CULL_BACKFACE;
-      break;
-    case SDLK_D:
-      cull_method = CULL_NONE;
-      break;
-    case SDLK_1:
-      render_method = RENDER_WIRE_VERTEX;
-      break;
-    case SDLK_2:
-      render_method = RENDER_WIRE;
-      break;
-    case SDLK_3:
-      render_method = RENDER_FILL_TRIANGLE;
-      break;
-    case SDLK_4:
-      render_method = RENDER_FILL_TRIANGLE_WIRE;
-      break;
+    case SDL_EVENT_KEY_DOWN:
+      switch (event.key.key)
+      {
+      case SDLK_ESCAPE:
+        is_running = false;
+        break;
+      case SDLK_C:
+        cull_method = CULL_BACKFACE;
+        break;
+      case SDLK_D:
+        cull_method = CULL_NONE;
+        break;
+      case SDLK_1:
+        render_method = RENDER_WIRE_VERTEX;
+        break;
+      case SDLK_2:
+        render_method = RENDER_WIRE;
+        break;
+      case SDLK_3:
+        render_method = RENDER_FILL_TRIANGLE;
+        break;
+      case SDLK_4:
+        render_method = RENDER_FILL_TRIANGLE_WIRE;
+        break;
+      }
+      break; // break swich key down event
     }
-    break; // break swich key down event
   }
 };
 
@@ -137,21 +139,22 @@ void update(void)
       transformed_vertices[j] = transformed_vertex;
     }
 
+    // calculate vectors from triangle vertices
+    vec3_t vector_a = vec3_from_vec4(transformed_vertices[0]);
+    vec3_t vector_b = vec3_from_vec4(transformed_vertices[1]);
+    vec3_t vector_c = vec3_from_vec4(transformed_vertices[2]);
+    vec3_t vector_ab = vec3_sub(vector_b, vector_a);
+    vec3_t vector_ac = vec3_sub(vector_c, vector_a);
+    vec3_normalize(&vector_ab);
+    vec3_normalize(&vector_ac);
+
+    // get the face normal
+    vec3_t vector_normal = vec3_cross(vector_ab, vector_ac);
+    vec3_normalize(&vector_normal);
+
     // perform back-face culling
     if (cull_method == CULL_BACKFACE)
     {
-      vec3_t vector_a = vec3_from_vec4(transformed_vertices[0]);
-      vec3_t vector_b = vec3_from_vec4(transformed_vertices[1]);
-      vec3_t vector_c = vec3_from_vec4(transformed_vertices[2]);
-      vec3_t vector_ab = vec3_sub(vector_b, vector_a);
-      vec3_t vector_ac = vec3_sub(vector_c, vector_a);
-      vec3_normalize(&vector_ab);
-      vec3_normalize(&vector_ac);
-
-      // get the face normal
-      vec3_t vector_normal = vec3_cross(vector_ab, vector_ac);
-      vec3_normalize(&vector_normal);
-
       vec3_t camera_ray = vec3_sub(camera_position, vector_a);
       float dot_normal_camera = vec3_dot(vector_normal, camera_ray);
       if (dot_normal_camera < 0)
@@ -175,6 +178,10 @@ void update(void)
       projected_points[j].y += (int)(window_height / 2);
     }
 
+    // perform lighting calculation
+    float light_intensity = -vec3_dot(vector_normal, light.direction);
+    uint32_t triangle_color = light_apply_intensity(mesh_face.color, light_intensity);
+
     float avg_depth = (transformed_vertices[0].z + transformed_vertices[1].z + transformed_vertices[2].z) / 3.0;
     triangle_t projected_triangle = {
       .points = {
@@ -182,7 +189,7 @@ void update(void)
         {projected_points[1].x, projected_points[1].y},
         {projected_points[2].x, projected_points[2].y},
       },
-      .color = mesh_face.color,
+      .color = triangle_color,
       .avg_depth = avg_depth,
     };
     array_push(triangles_to_render, projected_triangle);
