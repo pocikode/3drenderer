@@ -96,7 +96,7 @@ void update(void)
   triangles_to_render = NULL;
 
   // change mesh rotation / scale / translation per frame
-  mesh.rotation.x += 0.01;
+  mesh.rotation.x += 0.005;
   // mesh.rotation.y += 0.01;
   // mesh.rotation.z += 0.01;
   // mesh.scale.x += 0.002;
@@ -171,7 +171,7 @@ void update(void)
 
       // scale into the view
       projected_points[j].x *= (window_width / 2.0);
-      projected_points[j].y *= (window_height / 2.0);
+      projected_points[j].y *= -(window_height / 2.0);
 
       // translate the projected points into the middle of the screen
       projected_points[j].x += (window_width / 2.0);
