@@ -20,7 +20,7 @@ mat4_t proj_matrix;
 
 void setup(void)
 {
-  render_method = RENDER_WIRE;
+  render_method = RENDER_FILL_TRIANGLE;
   cull_method = CULL_BACKFACE;
 
   color_buffer = (uint32_t *)malloc(sizeof(uint32_t) * window_width * window_height);
@@ -174,8 +174,8 @@ void update(void)
       projected_points[j].y *= (window_height / 2.0);
 
       // translate the projected points into the middle of the screen
-      projected_points[j].x += (int)(window_width / 2);
-      projected_points[j].y += (int)(window_height / 2);
+      projected_points[j].x += (window_width / 2.0);
+      projected_points[j].y += (window_height / 2.0);
     }
 
     // perform lighting calculation
@@ -207,7 +207,7 @@ void free_resources(void)
 
 void render(void)
 {
-  clear_color_buffer(0xFF000000);
+  SDL_RenderClear(renderer);
   draw_grid();
 
   int num_triangles = array_length(triangles_to_render);
@@ -253,6 +253,7 @@ void render(void)
   array_free(triangles_to_render);
 
   render_color_buffer();
+  clear_color_buffer(0xFF000000);
   SDL_RenderPresent(renderer);
 };
 
