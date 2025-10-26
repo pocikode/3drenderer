@@ -7,7 +7,6 @@
 #include "vector.h"
 #include <math.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 triangle_t *triangles_to_render = NULL;
