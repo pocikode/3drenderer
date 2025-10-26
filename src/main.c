@@ -3,6 +3,7 @@
 #include "light.h"
 #include "matrix.h"
 #include "mesh.h"
+#include "texture.h"
 #include "triangle.h"
 #include "vector.h"
 #include <math.h>
@@ -38,8 +39,11 @@ void setup(void)
   float zfar = 100.0;
   proj_matrix = mat4_make_perspective(fov, aspect_ratio, znear, zfar);
 
-  // load_cube_mesh_data();
-  load_obj_file_data("../assets/f22.obj");
+  // load hardcoded texture
+  mesh_texture = (uint32_t *)REDBRICK_TEXTURE;
+
+  load_cube_mesh_data();
+  // load_obj_file_data("../assets/f22.obj");
 }
 
 void process_input(void)
@@ -76,6 +80,12 @@ void process_input(void)
       case SDLK_4:
         render_method = RENDER_FILL_TRIANGLE_WIRE;
         break;
+      case SDLK_5:
+        render_method = RENDER_TEXTURED;
+        break;
+      case SDLK_6:
+        render_method = RENDER_TEXTURED_WIRE;
+        break;
       }
       break; // break swich key down event
     }
@@ -92,6 +102,8 @@ void update(void)
 
   previous_frame_time = SDL_GetTicks();
 
+  if (triangles_to_render != NULL)
+    array_free(triangles_to_render);
   triangles_to_render = NULL;
 
   // change mesh rotation / scale / translation per frame
@@ -188,6 +200,11 @@ void update(void)
         {projected_points[1].x, projected_points[1].y},
         {projected_points[2].x, projected_points[2].y},
       },
+      .texcoords = {
+        mesh_face.a_uv,
+        mesh_face.b_uv,
+        mesh_face.c_uv,
+      },
       .color = triangle_color,
       .avg_depth = avg_depth,
     };
@@ -218,17 +235,24 @@ void render(void)
     if (render_method == RENDER_FILL_TRIANGLE || render_method == RENDER_FILL_TRIANGLE_WIRE)
     {
       draw_filled_triangle(
-        triangle.points[0].x,
-        triangle.points[0].y,
-        triangle.points[1].x,
-        triangle.points[1].y,
-        triangle.points[2].x,
-        triangle.points[2].y,
+        triangle.points[0].x, triangle.points[0].y, // vertex A
+        triangle.points[1].x, triangle.points[1].y, // vertex B
+        triangle.points[2].x, triangle.points[2].y, // vertex C
         triangle.color);
     }
 
+    // draw textured triangle
+    if (render_method == RENDER_TEXTURED || render_method == RENDER_TEXTURED_WIRE)
+    {
+      draw_textured_triangle(
+        triangle.points[0].x, triangle.points[0].y, triangle.texcoords[0].u, triangle.texcoords[0].v, // vertex A
+        triangle.points[1].x, triangle.points[1].y, triangle.texcoords[1].u, triangle.texcoords[1].v, // vertex B
+        triangle.points[2].x, triangle.points[2].y, triangle.texcoords[2].u, triangle.texcoords[2].v, // vertex C
+        mesh_texture);
+    }
+
     // draw wireframe
-    if (render_method != RENDER_FILL_TRIANGLE)
+    if (render_method != RENDER_FILL_TRIANGLE && render_method != RENDER_TEXTURED)
     {
       draw_triangle(
         triangle.points[0].x,
@@ -249,7 +273,7 @@ void render(void)
     }
   }
 
-  array_free(triangles_to_render);
+  // array_free(triangles_to_render);
 
   render_color_buffer();
   clear_color_buffer(0xFF000000);
