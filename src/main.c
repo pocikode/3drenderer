@@ -42,10 +42,10 @@ void setup(void)
   proj_matrix = mat4_make_perspective(fov, aspect_ratio, znear, zfar);
 
   // load_cube_mesh_data();
-  load_obj_file_data("../assets/f22.obj");
+  load_obj_file_data("../assets/f117.obj");
 
   // load texture information from PNG file
-  load_png_texture_data("../assets/f22.png");
+  load_png_texture_data("../assets/f117.png");
 }
 
 void process_input(void)
@@ -195,7 +195,6 @@ void update(void)
     float light_intensity = -vec3_dot(vector_normal, light.direction);
     uint32_t triangle_color = light_apply_intensity(mesh_face.color, light_intensity);
 
-    float avg_depth = (transformed_vertices[0].z + transformed_vertices[1].z + transformed_vertices[2].z) / 3.0;
     triangle_t projected_triangle = {
       .points = {
         {projected_points[0].x, projected_points[0].y, projected_points[0].z, projected_points[0].w},
@@ -208,12 +207,10 @@ void update(void)
         mesh_face.c_uv,
       },
       .color = triangle_color,
-      .avg_depth = avg_depth,
     };
+
     array_push(triangles_to_render, projected_triangle);
   }
-
-  sort_triangles(triangles_to_render);
 };
 
 void free_resources(void)
@@ -239,9 +236,9 @@ void render(void)
     if (render_method == RENDER_FILL_TRIANGLE || render_method == RENDER_FILL_TRIANGLE_WIRE)
     {
       draw_filled_triangle(
-        triangle.points[0].x, triangle.points[0].y, // vertex A
-        triangle.points[1].x, triangle.points[1].y, // vertex B
-        triangle.points[2].x, triangle.points[2].y, // vertex C
+        triangle.points[0].x, triangle.points[0].y, triangle.points[0].z, triangle.points[0].w, // vertex A
+        triangle.points[1].x, triangle.points[1].y, triangle.points[1].z, triangle.points[1].w, // vertex B
+        triangle.points[2].x, triangle.points[2].y, triangle.points[2].z, triangle.points[2].w, // vertex C
         triangle.color
       );
     }
@@ -279,8 +276,6 @@ void render(void)
       draw_rect(triangle.points[2].x - 3, triangle.points[2].y - 3, 6, 6, 0xFFFF0000);
     }
   }
-
-  // array_free(triangles_to_render);
 
   render_color_buffer();
 
