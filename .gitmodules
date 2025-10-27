@@ -1,0 +1,3 @@
+[submodule "external/upng"]
+	path = external/upng
+	url = https://github.com/elanthis/upng.git

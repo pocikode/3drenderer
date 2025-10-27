@@ -27,7 +27,7 @@ void setup(void)
 
   color_buffer_texture = SDL_CreateTexture(
     renderer,
-    SDL_PIXELFORMAT_ARGB8888,
+    SDL_PIXELFORMAT_RGBA32,
     SDL_TEXTUREACCESS_STREAMING,
     window_width,
     window_height
@@ -40,11 +40,11 @@ void setup(void)
   float zfar = 100.0;
   proj_matrix = mat4_make_perspective(fov, aspect_ratio, znear, zfar);
 
-  // load hardcoded texture
-  mesh_texture = (uint32_t *)REDBRICK_TEXTURE;
-
   load_cube_mesh_data();
   // load_obj_file_data("../assets/f22.obj");
+
+  // load texture information from PNG file
+  load_png_texture_data("../assets/cube.png");
 }
 
 void process_input(void)
@@ -218,6 +218,7 @@ void update(void)
 void free_resources(void)
 {
   free(color_buffer);
+  upng_free(png_texture);
   array_free(mesh.vertices);
   array_free(mesh.faces);
 }
