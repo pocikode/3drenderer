@@ -20,10 +20,11 @@ mat4_t proj_matrix;
 
 void setup(void)
 {
-  render_method = RENDER_FILL_TRIANGLE;
+  render_method = RENDER_TEXTURED;
   cull_method = CULL_BACKFACE;
 
   color_buffer = (uint32_t *)malloc(sizeof(uint32_t) * window_width * window_height);
+  z_buffer = (float *)malloc(sizeof(float) * window_width * window_height);
 
   color_buffer_texture = SDL_CreateTexture(
     renderer,
@@ -218,6 +219,7 @@ void update(void)
 void free_resources(void)
 {
   free(color_buffer);
+  free(z_buffer);
   upng_free(png_texture);
   array_free(mesh.vertices);
   array_free(mesh.faces);
@@ -281,7 +283,10 @@ void render(void)
   // array_free(triangles_to_render);
 
   render_color_buffer();
+
   clear_color_buffer(0xFF000000);
+  clear_z_buffer();
+
   SDL_RenderPresent(renderer);
 };
 
