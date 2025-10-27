@@ -1,5 +1,6 @@
 #include "mesh.h"
 #include "array.h"
+#include "texture.h"
 #include "triangle.h"
 #include <stdio.h>
 #include <string.h>
@@ -68,6 +69,8 @@ void load_obj_file_data(char *filename)
     return;
   }
 
+  tex2_t *texcoords = NULL;
+
   char buff[512];
   while (fgets(buff, 512, fp))
   {
@@ -77,6 +80,15 @@ void load_obj_file_data(char *filename)
       vec3_t vertex;
       sscanf(buff, "v %f %f %f", &vertex.x, &vertex.y, &vertex.z);
       array_push(mesh.vertices, vertex);
+      continue;
+    }
+
+    // texture coordinate information
+    if (strncmp(buff, "vt", 2) == 0)
+    {
+      tex2_t texcoord;
+      sscanf(buff, "vt %f %f", &texcoord.u, &texcoord.v);
+      array_push(texcoords, texcoord);
       continue;
     }
 
@@ -95,9 +107,12 @@ void load_obj_file_data(char *filename)
       );
 
       face_t face = {
-        vertex_indices[0],
-        vertex_indices[1],
-        vertex_indices[2],
+        .a = vertex_indices[0] - 1,
+        .b = vertex_indices[1] - 1,
+        .c = vertex_indices[2] - 1,
+        .a_uv = texcoords[texture_indices[0] - 1],
+        .b_uv = texcoords[texture_indices[1] - 1],
+        .c_uv = texcoords[texture_indices[2] - 1],
         .color = 0xFFFFFFFF,
       };
       array_push(mesh.faces, face);
@@ -105,5 +120,6 @@ void load_obj_file_data(char *filename)
     }
   }
 
+  array_free(texcoords);
   fclose(fp);
 }

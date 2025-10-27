@@ -40,11 +40,11 @@ void setup(void)
   float zfar = 100.0;
   proj_matrix = mat4_make_perspective(fov, aspect_ratio, znear, zfar);
 
-  load_cube_mesh_data();
-  // load_obj_file_data("../assets/f22.obj");
+  // load_cube_mesh_data();
+  load_obj_file_data("../assets/f22.obj");
 
   // load texture information from PNG file
-  load_png_texture_data("../assets/cube.png");
+  load_png_texture_data("../assets/f22.png");
 }
 
 void process_input(void)
@@ -108,8 +108,8 @@ void update(void)
   triangles_to_render = NULL;
 
   // change mesh rotation / scale / translation per frame
-  // mesh.rotation.x += 0.005;
-  mesh.rotation.y += 0.005;
+  mesh.rotation.x += 0.005;
+  // mesh.rotation.y += 0.005;
   // mesh.rotation.z += 0.01;
   // mesh.scale.x += 0.002;
   // mesh.translation.x += 0.01;
@@ -128,9 +128,9 @@ void update(void)
     face_t mesh_face = mesh.faces[i];
 
     vec3_t face_vertices[3];
-    face_vertices[0] = mesh.vertices[mesh_face.a - 1];
-    face_vertices[1] = mesh.vertices[mesh_face.b - 1];
-    face_vertices[2] = mesh.vertices[mesh_face.c - 1];
+    face_vertices[0] = mesh.vertices[mesh_face.a];
+    face_vertices[1] = mesh.vertices[mesh_face.b];
+    face_vertices[2] = mesh.vertices[mesh_face.c];
 
     // perform transformations
     vec4_t transformed_vertices[3];

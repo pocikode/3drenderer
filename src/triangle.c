@@ -150,8 +150,8 @@ void draw_texel(
   interpolated_u /= interpolated_reciprocal_w;
   interpolated_v /= interpolated_reciprocal_w;
 
-  int tex_x = abs((int)(interpolated_u * texture_width));
-  int tex_y = abs((int)(interpolated_v * texture_height));
+  int tex_x = abs((int)(interpolated_u * texture_width)) % texture_width;
+  int tex_y = abs((int)(interpolated_v * texture_height)) % texture_height;
 
   draw_pixel(x, y, texture[(texture_width * tex_y) + tex_x]);
 }
@@ -191,6 +191,11 @@ void draw_textured_triangle(
     float_swap(&u0, &u1);
     float_swap(&v0, &v1);
   }
+
+  // flip V component for inverted UV-coordinates
+  v0 = 1.0 - v0;
+  v1 = 1.0 - v1;
+  v2 = 1.0 - v2;
 
   // vector points and texture coordinates
   vec4_t point_a = {x0, y0, z0, w0};
