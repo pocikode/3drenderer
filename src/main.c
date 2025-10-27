@@ -10,12 +10,18 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-triangle_t *triangles_to_render = NULL;
-
+// Global variable for runtime status and game loop
 bool is_running = false;
 uint32_t previous_frame_time = 0;
-
 vec3_t camera_position = {0, 0, 0};
+
+// Array to store triangles that should be rendered each frame
+#define MAX_TRIANGLES 10000
+triangle_t triangles_to_render[MAX_TRIANGLES];
+int num_triangles_to_render = 0;
+
+// Declaration of global transformation vertices
+mat4_t world_matrix;
 mat4_t proj_matrix;
 
 void setup(void)
@@ -41,7 +47,7 @@ void setup(void)
   float zfar = 100.0;
   proj_matrix = mat4_make_perspective(fov, aspect_ratio, znear, zfar);
 
-  // load_cube_mesh_data();
+  // load vertex and face values from OBJ file for mesh data structure
   load_obj_file_data("../assets/f117.obj");
 
   // load texture information from PNG file
@@ -104,9 +110,7 @@ void update(void)
 
   previous_frame_time = SDL_GetTicks();
 
-  if (triangles_to_render != NULL)
-    array_free(triangles_to_render);
-  triangles_to_render = NULL;
+  num_triangles_to_render = 0;
 
   // change mesh rotation / scale / translation per frame
   mesh.rotation.x += 0.005;
@@ -141,7 +145,7 @@ void update(void)
 
       // world matrix (scale * rotation * translation matrices)
       // order matters: scale - rotation - translation
-      mat4_t world_matrix = mat4_identity();
+      world_matrix = mat4_identity();
       world_matrix = mat4_mul_mat4(scale_matrix, world_matrix);
       world_matrix = mat4_mul_mat4(rotation_matrix_z, world_matrix);
       world_matrix = mat4_mul_mat4(rotation_matrix_y, world_matrix);
@@ -209,7 +213,10 @@ void update(void)
       .color = triangle_color,
     };
 
-    array_push(triangles_to_render, projected_triangle);
+    if (num_triangles_to_render < MAX_TRIANGLES)
+    {
+      triangles_to_render[num_triangles_to_render++] = projected_triangle;
+    }
   }
 };
 
@@ -227,8 +234,7 @@ void render(void)
   SDL_RenderClear(renderer);
   draw_grid();
 
-  int num_triangles = array_length(triangles_to_render);
-  for (int i = 0; i < num_triangles; i++)
+  for (int i = 0; i < num_triangles_to_render; i++)
   {
     triangle_t triangle = triangles_to_render[i];
 
