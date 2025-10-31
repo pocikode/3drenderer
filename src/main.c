@@ -1,4 +1,5 @@
 #include "array.h"
+#include "camera.h"
 #include "display.h"
 #include "light.h"
 #include "matrix.h"
@@ -13,7 +14,6 @@
 // Global variable for runtime status and game loop
 bool is_running = false;
 uint32_t previous_frame_time = 0;
-vec3_t camera_position = {0, 0, 0};
 
 // Array to store triangles that should be rendered each frame
 #define MAX_TRIANGLES 10000
@@ -23,6 +23,7 @@ int num_triangles_to_render = 0;
 // Declaration of global transformation vertices
 mat4_t world_matrix;
 mat4_t proj_matrix;
+mat4_t view_matrix;
 
 void setup(void)
 {
@@ -113,12 +114,21 @@ void update(void)
   num_triangles_to_render = 0;
 
   // change mesh rotation / scale / translation per frame
-  mesh.rotation.x += 0.005;
+  // mesh.rotation.x += 0.005;
   // mesh.rotation.y += 0.005;
   // mesh.rotation.z += 0.01;
   // mesh.scale.x += 0.002;
   // mesh.translation.x += 0.01;
   mesh.translation.z = 5; // move away object from camera
+
+  // change camera position per animation
+  camera.position.x += 0.008;
+  camera.position.y += 0.008;
+
+  // view matrix
+  vec3_t camera_target = {0, 0, 5};       // hardcoded target
+  vec3_t camera_up_direction = {0, 1, 0}; // default up direction
+  view_matrix = mat4_look_at(camera.position, camera_target, camera_up_direction);
 
   // create matrix for perfoming rotation / scale / translation
   mat4_t scale_matrix = mat4_make_scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
@@ -153,6 +163,10 @@ void update(void)
       world_matrix = mat4_mul_mat4(translation_matrix, world_matrix);
 
       transformed_vertex = mat4_mul_vec4(world_matrix, transformed_vertex);
+
+      // Multiply the view matrix by the vector to transform the scene to camera space
+      transformed_vertex = mat4_mul_vec4(view_matrix, transformed_vertex);
+
       transformed_vertices[j] = transformed_vertex;
     }
 
@@ -172,7 +186,8 @@ void update(void)
     // perform back-face culling
     if (cull_method == CULL_BACKFACE)
     {
-      vec3_t camera_ray = vec3_sub(camera_position, vector_a);
+      vec3_t origin = {0, 0, 0};
+      vec3_t camera_ray = vec3_sub(origin, vector_a);
       float dot_normal_camera = vec3_dot(vector_normal, camera_ray);
       if (dot_normal_camera < 0)
       {
