@@ -14,6 +14,7 @@
 // Global variable for runtime status and game loop
 bool is_running = false;
 uint32_t previous_frame_time = 0;
+float delta_time = 0;
 
 // Array to store triangles that should be rendered each frame
 #define MAX_TRIANGLES 10000
@@ -49,10 +50,10 @@ void setup(void)
   proj_matrix = mat4_make_perspective(fov, aspect_ratio, znear, zfar);
 
   // load vertex and face values from OBJ file for mesh data structure
-  load_obj_file_data("../assets/f117.obj");
+  load_obj_file_data("../assets/efa.obj");
 
   // load texture information from PNG file
-  load_png_texture_data("../assets/f117.png");
+  load_png_texture_data("../assets/efa.png");
 }
 
 void process_input(void)
@@ -109,21 +110,23 @@ void update(void)
     SDL_Delay(time_to_wait);
   }
 
+  delta_time = (SDL_GetTicks() - previous_frame_time) / 1000.0;
+
   previous_frame_time = SDL_GetTicks();
 
   num_triangles_to_render = 0;
 
   // change mesh rotation / scale / translation per frame
-  // mesh.rotation.x += 0.005;
-  // mesh.rotation.y += 0.005;
-  // mesh.rotation.z += 0.01;
+  mesh.rotation.x += 0.5 * delta_time;
+  mesh.rotation.y += 0.5 * delta_time;
+  mesh.rotation.z += 0.5 * delta_time;
   // mesh.scale.x += 0.002;
   // mesh.translation.x += 0.01;
   mesh.translation.z = 5; // move away object from camera
 
   // change camera position per animation
-  camera.position.x += 0.008;
-  camera.position.y += 0.008;
+  camera.position.x += 0.8 * delta_time;
+  camera.position.y += 0.8 * delta_time;
 
   // view matrix
   vec3_t camera_target = {0, 0, 5};       // hardcoded target
