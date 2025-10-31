@@ -75,7 +75,7 @@ void process_input(void)
       case SDLK_C:
         cull_method = CULL_BACKFACE;
         break;
-      case SDLK_D:
+      case SDLK_X:
         cull_method = CULL_NONE;
         break;
       case SDLK_1:
@@ -95,6 +95,26 @@ void process_input(void)
         break;
       case SDLK_6:
         render_method = RENDER_TEXTURED_WIRE;
+        break;
+      case SDLK_UP:
+        camera.position.y += 3.0 * delta_time;
+        break;
+      case SDLK_DOWN:
+        camera.position.y -= 3.0 * delta_time;
+        break;
+      case SDLK_W:
+        camera.forward_velocity = vec3_mul(camera.direction, 5.0 * delta_time);
+        camera.position = vec3_add(camera.position, camera.forward_velocity);
+        break;
+      case SDLK_S:
+        camera.forward_velocity = vec3_mul(camera.direction, 5.0 * delta_time);
+        camera.position = vec3_sub(camera.position, camera.forward_velocity);
+        break;
+      case SDLK_A:
+        camera.yaw_angle += 1.0 * delta_time;
+        break;
+      case SDLK_D:
+        camera.yaw_angle -= 1.0 * delta_time;
         break;
       }
       break; // break swich key down event
@@ -117,22 +137,30 @@ void update(void)
   num_triangles_to_render = 0;
 
   // change mesh rotation / scale / translation per frame
-  mesh.rotation.x += 0.5 * delta_time;
-  mesh.rotation.y += 0.5 * delta_time;
-  mesh.rotation.z += 0.5 * delta_time;
+  // mesh.rotation.x += 0.5 * delta_time;
+  // mesh.rotation.y += 0.5 * delta_time;
+  // mesh.rotation.z += 0.5 * delta_time;
   // mesh.scale.x += 0.002;
   // mesh.translation.x += 0.01;
   mesh.translation.z = 5; // move away object from camera
 
-  // change camera position per animation
-  camera.position.x += 0.8 * delta_time;
-  camera.position.y += 0.8 * delta_time;
-
+  //////////////////////
   // view matrix
-  vec3_t camera_target = {0, 0, 5};       // hardcoded target
+  //////////////////////
+  // initialize the target looking at the positive z-axis
+  vec3_t camera_target = {0, 0, 1};
+  mat4_t camera_yaw_rotation = mat4_make_rotation_y(camera.yaw_angle);
+  camera.direction = vec3_from_vec4(mat4_mul_vec4(camera_yaw_rotation, vec4_from_vec3(camera_target)));
+
+  // offset the camera position in the direction where the camera is pointing at
+  camera_target = vec3_add(camera.position, camera.direction);
   vec3_t camera_up_direction = {0, 1, 0}; // default up direction
+
   view_matrix = mat4_look_at(camera.position, camera_target, camera_up_direction);
 
+  ///////////////////////////
+  // transformation matrix
+  ///////////////////////////
   // create matrix for perfoming rotation / scale / translation
   mat4_t scale_matrix = mat4_make_scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
   mat4_t translation_matrix = mat4_make_translation(mesh.translation.x, mesh.translation.y, mesh.translation.z);
