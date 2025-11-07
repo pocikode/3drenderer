@@ -1,5 +1,6 @@
 #include "array.h"
 #include "camera.h"
+#include "clipping.h"
 #include "display.h"
 #include "light.h"
 #include "matrix.h"
@@ -9,6 +10,7 @@
 #include "vector.h"
 #include <math.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 // Global variable for runtime status and game loop
@@ -43,11 +45,16 @@ void setup(void)
   );
 
   // initialize perspective projection matrix
-  float fov = M_PI / 3.0;
-  float aspect_ratio = window_height / (float)window_width;
-  float znear = 0.1;
-  float zfar = 100.0;
-  proj_matrix = mat4_make_perspective(fov, aspect_ratio, znear, zfar);
+  float aspect_x = window_width / (float)window_height;
+  float aspect_y = window_height / (float)window_width;
+  float fov_y = M_PI / 3.0;
+  float fov_x = atan(tan(fov_y / 2.0) * aspect_x) * 2.0;
+  float z_near = 0.1;
+  float z_far = 100.0;
+  proj_matrix = mat4_make_perspective(fov_y, aspect_y, z_near, z_far);
+
+  // initialize frustum planes
+  init_frustum_planes(fov_x, fov_y, z_near, z_far);
 
   // load vertex and face values from OBJ file for mesh data structure
   load_obj_file_data("../assets/efa.obj");
@@ -226,42 +233,66 @@ void update(void)
       }
     }
 
-    // perform projection
-    vec4_t projected_points[3];
-    for (int j = 0; j < 3; j++)
+    // create polygon from triangle vertices to perform clipping
+    polygon_t polygon = polygon_from_triangle(
+      vec3_from_vec4(transformed_vertices[0]),
+      vec3_from_vec4(transformed_vertices[1]),
+      vec3_from_vec4(transformed_vertices[2]),
+      mesh_face.a_uv,
+      mesh_face.b_uv,
+      mesh_face.c_uv
+    );
+
+    // clip the polygon against the frustum planes
+    clip_polygon(&polygon);
+
+    // break the polygon into triangles after clipping
+    triangle_t triangles_after_clipping[MAX_NUM_POLY_TRIANGLES];
+    int num_triangles_after_clipping = 0;
+    triangles_from_polygon(&polygon, triangles_after_clipping, &num_triangles_after_clipping);
+
+    // loop through each triangle after clipping
+    for (int t = 0; t < num_triangles_after_clipping; t++)
     {
-      projected_points[j] = mat4_mul_vec4_project(proj_matrix, transformed_vertices[j]);
+      triangle_t triangle_after_clipping = triangles_after_clipping[t];
 
-      // scale into the view
-      projected_points[j].x *= (window_width / 2.0);
-      projected_points[j].y *= -(window_height / 2.0);
+      // perform projection
+      vec4_t projected_points[3];
+      for (int j = 0; j < 3; j++)
+      {
+        projected_points[j] = mat4_mul_vec4_project(proj_matrix, triangle_after_clipping.points[j]);
 
-      // translate the projected points into the middle of the screen
-      projected_points[j].x += (window_width / 2.0);
-      projected_points[j].y += (window_height / 2.0);
-    }
+        // scale into the view
+        projected_points[j].x *= (window_width / 2.0);
+        projected_points[j].y *= -(window_height / 2.0);
 
-    // perform lighting calculation
-    float light_intensity = -vec3_dot(vector_normal, light.direction);
-    uint32_t triangle_color = light_apply_intensity(mesh_face.color, light_intensity);
+        // translate the projected points into the middle of the screen
+        projected_points[j].x += (window_width / 2.0);
+        projected_points[j].y += (window_height / 2.0);
+      }
 
-    triangle_t projected_triangle = {
-      .points = {
-        {projected_points[0].x, projected_points[0].y, projected_points[0].z, projected_points[0].w},
-        {projected_points[1].x, projected_points[1].y, projected_points[1].z, projected_points[1].w},
-        {projected_points[2].x, projected_points[2].y, projected_points[2].z, projected_points[2].w},
-      },
-      .texcoords = {
-        mesh_face.a_uv,
-        mesh_face.b_uv,
-        mesh_face.c_uv,
-      },
-      .color = triangle_color,
-    };
+      // perform lighting calculation
+      float light_intensity = -vec3_dot(vector_normal, light.direction);
+      uint32_t triangle_color = light_apply_intensity(mesh_face.color, light_intensity);
 
-    if (num_triangles_to_render < MAX_TRIANGLES)
-    {
-      triangles_to_render[num_triangles_to_render++] = projected_triangle;
+      triangle_t triangle_to_render = {
+        .points = {
+          {projected_points[0].x, projected_points[0].y, projected_points[0].z, projected_points[0].w},
+          {projected_points[1].x, projected_points[1].y, projected_points[1].z, projected_points[1].w},
+          {projected_points[2].x, projected_points[2].y, projected_points[2].z, projected_points[2].w},
+        },
+        .texcoords = {
+          triangle_after_clipping.texcoords[0],
+          triangle_after_clipping.texcoords[1],
+          triangle_after_clipping.texcoords[2],
+        },
+        .color = triangle_color,
+      };
+
+      if (num_triangles_to_render < MAX_TRIANGLES)
+      {
+        triangles_to_render[num_triangles_to_render++] = triangle_to_render;
+      }
     }
   }
 };
