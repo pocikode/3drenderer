@@ -8,6 +8,7 @@
 #include "texture.h"
 #include "triangle.h"
 #include "vector.h"
+#include <SDL3/SDL_keycode.h>
 #include <math.h>
 #include <stdint.h>
 
@@ -94,24 +95,24 @@ void process_input(void)
         set_render_method(RENDER_TEXTURED_WIRE);
         break;
       case SDLK_UP:
-        camera.position.y += 3.0 * delta_time;
+        update_camera_forward_velocity(vec3_mul(get_camera_direction(), 5.0 * delta_time));
+        update_camera_position(vec3_add(get_camera_position(), get_camera_forward_velocity()));
         break;
       case SDLK_DOWN:
-        camera.position.y -= 3.0 * delta_time;
+        update_camera_forward_velocity(vec3_mul(get_camera_direction(), 5.0 * delta_time));
+        update_camera_position(vec3_sub(get_camera_position(), get_camera_forward_velocity()));
+        break;
+      case SDLK_LEFT:
+        rotate_camera_yaw(-1.0 * delta_time);
+        break;
+      case SDLK_RIGHT:
+        rotate_camera_yaw(1.0 * delta_time);
         break;
       case SDLK_W:
-        camera.forward_velocity = vec3_mul(camera.direction, 5.0 * delta_time);
-        camera.position = vec3_add(camera.position, camera.forward_velocity);
+        rotate_camera_pitch(3.0 * delta_time);
         break;
       case SDLK_S:
-        camera.forward_velocity = vec3_mul(camera.direction, 5.0 * delta_time);
-        camera.position = vec3_sub(camera.position, camera.forward_velocity);
-        break;
-      case SDLK_A:
-        camera.yaw_angle += 1.0 * delta_time;
-        break;
-      case SDLK_D:
-        camera.yaw_angle -= 1.0 * delta_time;
+        rotate_camera_pitch(-3.0 * delta_time);
         break;
       }
       break; // break swich key down event
@@ -142,18 +143,11 @@ void update(void)
   mesh.translation.z = 5; // move away object from camera
 
   //////////////////////
-  // view matrix
+  // view matrix (camera)
   //////////////////////
-  // initialize the target looking at the positive z-axis
-  vec3_t camera_target = {0, 0, 1};
-  mat4_t camera_yaw_rotation = mat4_make_rotation_y(camera.yaw_angle);
-  camera.direction = vec3_from_vec4(mat4_mul_vec4(camera_yaw_rotation, vec4_from_vec3(camera_target)));
-
-  // offset the camera position in the direction where the camera is pointing at
-  camera_target = vec3_add(camera.position, camera.direction);
-  vec3_t camera_up_direction = {0, 1, 0}; // default up direction
-
-  view_matrix = mat4_look_at(camera.position, camera_target, camera_up_direction);
+  vec3_t camera_target = get_camera_lookat_target();
+  vec3_t camera_up_direction = vec3_new(0, 1, 0);
+  view_matrix = mat4_look_at(get_camera_position(), camera_target, camera_up_direction);
 
   ///////////////////////////
   // transformation matrix
