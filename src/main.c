@@ -10,8 +10,6 @@
 #include "vector.h"
 #include <math.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 // Global variable for runtime status and game loop
 bool is_running = false;
@@ -30,23 +28,12 @@ mat4_t view_matrix;
 
 void setup(void)
 {
-  render_method = RENDER_TEXTURED;
-  cull_method = CULL_BACKFACE;
-
-  color_buffer = (uint32_t *)malloc(sizeof(uint32_t) * window_width * window_height);
-  z_buffer = (float *)malloc(sizeof(float) * window_width * window_height);
-
-  color_buffer_texture = SDL_CreateTexture(
-    renderer,
-    SDL_PIXELFORMAT_RGBA32,
-    SDL_TEXTUREACCESS_STREAMING,
-    window_width,
-    window_height
-  );
+  set_render_method(RENDER_TEXTURED);
+  set_cull_method(CULL_BACKFACE);
 
   // initialize perspective projection matrix
-  float aspect_x = window_width / (float)window_height;
-  float aspect_y = window_height / (float)window_width;
+  float aspect_x = get_window_width() / (float)get_window_height();
+  float aspect_y = get_window_height() / (float)get_window_width();
   float fov_y = M_PI / 3.0;
   float fov_x = atan(tan(fov_y / 2.0) * aspect_x) * 2.0;
   float z_near = 0.1;
@@ -80,28 +67,28 @@ void process_input(void)
         is_running = false;
         break;
       case SDLK_C:
-        cull_method = CULL_BACKFACE;
+        set_cull_method(CULL_BACKFACE);
         break;
       case SDLK_X:
-        cull_method = CULL_NONE;
+        set_cull_method(CULL_NONE);
         break;
       case SDLK_1:
-        render_method = RENDER_WIRE_VERTEX;
+        set_render_method(RENDER_WIRE_VERTEX);
         break;
       case SDLK_2:
-        render_method = RENDER_WIRE;
+        set_render_method(RENDER_WIRE);
         break;
       case SDLK_3:
-        render_method = RENDER_FILL_TRIANGLE;
+        set_render_method(RENDER_FILL_TRIANGLE);
         break;
       case SDLK_4:
-        render_method = RENDER_FILL_TRIANGLE_WIRE;
+        set_render_method(RENDER_FILL_TRIANGLE_WIRE);
         break;
       case SDLK_5:
-        render_method = RENDER_TEXTURED;
+        set_render_method(RENDER_TEXTURED);
         break;
       case SDLK_6:
-        render_method = RENDER_TEXTURED_WIRE;
+        set_render_method(RENDER_TEXTURED_WIRE);
         break;
       case SDLK_UP:
         camera.position.y += 3.0 * delta_time;
@@ -222,7 +209,7 @@ void update(void)
     vec3_normalize(&vector_normal);
 
     // perform back-face culling
-    if (cull_method == CULL_BACKFACE)
+    if (is_cull_backface())
     {
       vec3_t origin = {0, 0, 0};
       vec3_t camera_ray = vec3_sub(origin, vector_a);
@@ -263,12 +250,12 @@ void update(void)
         projected_points[j] = mat4_mul_vec4_project(proj_matrix, triangle_after_clipping.points[j]);
 
         // scale into the view
-        projected_points[j].x *= (window_width / 2.0);
-        projected_points[j].y *= -(window_height / 2.0);
+        projected_points[j].x *= (get_window_width() / 2.0);
+        projected_points[j].y *= -(get_window_height() / 2.0);
 
         // translate the projected points into the middle of the screen
-        projected_points[j].x += (window_width / 2.0);
-        projected_points[j].y += (window_height / 2.0);
+        projected_points[j].x += (get_window_width() / 2.0);
+        projected_points[j].y += (get_window_height() / 2.0);
       }
 
       // perform lighting calculation
@@ -299,8 +286,6 @@ void update(void)
 
 void free_resources(void)
 {
-  free(color_buffer);
-  free(z_buffer);
   upng_free(png_texture);
   array_free(mesh.vertices);
   array_free(mesh.faces);
@@ -308,7 +293,9 @@ void free_resources(void)
 
 void render(void)
 {
-  SDL_RenderClear(renderer);
+  clear_color_buffer(0xFF000000);
+  clear_z_buffer();
+
   draw_grid();
 
   for (int i = 0; i < num_triangles_to_render; i++)
@@ -316,7 +303,7 @@ void render(void)
     triangle_t triangle = triangles_to_render[i];
 
     // draw filled triangle
-    if (render_method == RENDER_FILL_TRIANGLE || render_method == RENDER_FILL_TRIANGLE_WIRE)
+    if (should_render_filled_triangles())
     {
       draw_filled_triangle(
         triangle.points[0].x, triangle.points[0].y, triangle.points[0].z, triangle.points[0].w, // vertex A
@@ -327,7 +314,7 @@ void render(void)
     }
 
     // draw textured triangle
-    if (render_method == RENDER_TEXTURED || render_method == RENDER_TEXTURED_WIRE)
+    if (should_render_textured_triangle())
     {
       draw_textured_triangle(
         triangle.points[0].x, triangle.points[0].y, triangle.points[0].z, triangle.points[0].w, triangle.texcoords[0].u, triangle.texcoords[0].v, // vertex A
@@ -338,7 +325,7 @@ void render(void)
     }
 
     // draw wireframe
-    if (render_method != RENDER_FILL_TRIANGLE && render_method != RENDER_TEXTURED)
+    if (should_render_wireframe())
     {
       draw_triangle(
         triangle.points[0].x,
@@ -352,7 +339,7 @@ void render(void)
     }
 
     // draw the vertex
-    if (render_method == RENDER_WIRE_VERTEX)
+    if (should_render_wire_vertex())
     {
       draw_rect(triangle.points[0].x - 3, triangle.points[0].y - 3, 6, 6, 0xFFFF0000);
       draw_rect(triangle.points[1].x - 3, triangle.points[1].y - 3, 6, 6, 0xFFFF0000);
@@ -361,11 +348,6 @@ void render(void)
   }
 
   render_color_buffer();
-
-  clear_color_buffer(0xFF000000);
-  clear_z_buffer();
-
-  SDL_RenderPresent(renderer);
 };
 
 int main(void)
