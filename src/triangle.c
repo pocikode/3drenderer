@@ -176,20 +176,20 @@ void draw_texel(
   interpolated_u /= interpolated_reciprocal_w;
   interpolated_v /= interpolated_reciprocal_w;
 
-  int tex_x = abs((int)(interpolated_u * texture_width)) % texture_width;
-  int tex_y = abs((int)(interpolated_v * texture_height)) % texture_height;
-
-  // adjust 1/w so the pixels that are closer to the camera have smaller values
-  interpolated_reciprocal_w = 1.0 - interpolated_reciprocal_w;
-
-  // only draw pixel if the depth value is less than the one previously stored in the z-buffer
-  if (interpolated_reciprocal_w < get_zbuffer_at(x, y))
-  {
-    draw_pixel(x, y, texture[(texture_width * tex_y) + tex_x]);
-
-    // update z-buffer value with 1/w of this current pixel
-    set_zbuffer_at(x, y, interpolated_reciprocal_w);
-  }
+  // int tex_x = abs((int)(interpolated_u * texture_width)) % texture_width;
+  // int tex_y = abs((int)(interpolated_v * texture_height)) % texture_height;
+  //
+  // // adjust 1/w so the pixels that are closer to the camera have smaller values
+  // interpolated_reciprocal_w = 1.0 - interpolated_reciprocal_w;
+  //
+  // // only draw pixel if the depth value is less than the one previously stored in the z-buffer
+  // if (interpolated_reciprocal_w < get_zbuffer_at(x, y))
+  // {
+  //   draw_pixel(x, y, texture[(texture_width * tex_y) + tex_x]);
+  //
+  //   // update z-buffer value with 1/w of this current pixel
+  //   set_zbuffer_at(x, y, interpolated_reciprocal_w);
+  // }
 }
 
 void draw_textured_triangle(
