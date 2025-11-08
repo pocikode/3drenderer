@@ -40,6 +40,9 @@ void setup(void)
   float z_far = 100.0;
   proj_matrix = mat4_make_perspective(fov_y, aspect_y, z_near, z_far);
 
+  // initialize light
+  init_light(vec3_new(0, 0, 1));
+
   // initialize frustum planes
   init_frustum_planes(fov_x, fov_y, z_near, z_far);
 
@@ -259,7 +262,7 @@ void update(void)
       }
 
       // perform lighting calculation
-      float light_intensity = -vec3_dot(vector_normal, light.direction);
+      float light_intensity = -vec3_dot(vector_normal, get_light_direction());
       uint32_t triangle_color = light_apply_intensity(mesh_face.color, light_intensity);
 
       triangle_t triangle_to_render = {
