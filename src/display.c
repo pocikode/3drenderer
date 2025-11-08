@@ -14,6 +14,9 @@ static SDL_Texture *color_buffer_texture = NULL;
 static int window_width = 800;
 static int window_height = 600;
 
+static int fullscreen_window_width;
+static int fullscreen_window_height;
+
 int render_method = 0;
 int cull_method = 0;
 
@@ -41,8 +44,8 @@ bool initialize_window(void)
   if (num_displays <= 0 || !displays)
   {
     fprintf(stderr, "Error: No displays found: %s\n", SDL_GetError());
-    window_width = 800; // fallback resolution
-    window_height = 600;
+    fullscreen_window_width = 800; // fallback resolution
+    fullscreen_window_height = 600;
   }
   else
   {
@@ -50,16 +53,20 @@ bool initialize_window(void)
     if (!display_mode)
     {
       fprintf(stderr, "Error: SDL_GetCurrentDisplayMode(): %s\n", SDL_GetError());
-      window_width = 800; // fallback resolution
-      window_height = 600;
+      fullscreen_window_width = 800; // fallback resolution
+      fullscreen_window_height = 600;
     }
     else
     {
-      window_width = display_mode->w;
-      window_height = display_mode->h;
+      fullscreen_window_width = display_mode->w;
+      fullscreen_window_height = display_mode->h;
     }
     SDL_free(displays);
   }
+
+  // simulate low resolution display
+  window_width = fullscreen_window_width / 3;
+  window_height = fullscreen_window_height / 3;
 
   // create SDL window
   window = SDL_CreateWindow(NULL, window_width, window_height, SDL_WINDOW_BORDERLESS);
