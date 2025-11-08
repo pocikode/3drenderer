@@ -7,6 +7,26 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+vec3_t get_triangle_normal(vec4_t vertices[3])
+{
+  // calculate vectors from triangle vertices
+  vec3_t vector_a = vec3_from_vec4(vertices[0]);
+  vec3_t vector_b = vec3_from_vec4(vertices[1]);
+  vec3_t vector_c = vec3_from_vec4(vertices[2]);
+
+  // get vector subtraction of B-A and C-A
+  vec3_t vector_ab = vec3_sub(vector_b, vector_a);
+  vec3_t vector_ac = vec3_sub(vector_c, vector_a);
+  vec3_normalize(&vector_ab);
+  vec3_normalize(&vector_ac);
+
+  // get the face normal
+  vec3_t vector_normal = vec3_cross(vector_ab, vector_ac);
+  vec3_normalize(&vector_normal);
+
+  return vector_normal;
+}
+
 vec3_t barycentric_weights(vec2_t a, vec2_t b, vec2_t c, vec2_t p)
 {
   vec2_t ac = vec2_sub(c, a);

@@ -25,6 +25,8 @@ typedef struct
   upng_t *texture;
 } triangle_t;
 
+vec3_t get_triangle_normal(vec4_t vertices[3]);
+
 vec3_t barycentric_weights(vec2_t a, vec2_t b, vec2_t c, vec2_t p);
 
 void draw_triangle_pixel(
